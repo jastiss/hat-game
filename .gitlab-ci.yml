@@ -1,0 +1,29 @@
+# Конфигурация GitLab CI/CD для авто-деплоя на GitLab Pages.
+# При каждом пуше в основную ветку (main или master) сайт пересобирается
+# и публикуется по адресу https://<user>.gitlab.io/<repo-name>/
+
+image: node:20-alpine
+
+# Кешируем node_modules между запусками — сборка идёт быстрее
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - node_modules/
+
+pages:
+  stage: deploy
+  script:
+    - npm ci
+    - npm run build
+    # GitLab Pages публикует содержимое папки `public`.
+    # Vite собирает в `dist`, поэтому переименовываем.
+    - rm -rf public
+    - mv dist public
+  artifacts:
+    paths:
+      - public
+  rules:
+    # Деплоим только при пуше в основную ветку.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
